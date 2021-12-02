@@ -1,0 +1,179 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "build-script-build" with type "custom-build" omitted
+
+rust_library(
+    name = "rocket",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+    ],
+    crate_root = "src/lib.rs",
+    data = [],
+    edition = "2018",
+    proc_macro_deps = [
+        "//cargo/vendor/async-trait-0.1.51:async_trait",
+        "//cargo/vendor/rocket_codegen-0.5.0-rc.1:rocket_codegen",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.5.0-rc.1",
+    # buildifier: leave-alone
+    deps = [
+        "//cargo/vendor/async-stream-0.3.2:async_stream",
+        "//cargo/vendor/atomic-0.5.1:atomic",
+        "//cargo/vendor/atty-0.2.14:atty",
+        "//cargo/vendor/binascii-0.1.4:binascii",
+        "//cargo/vendor/bytes-1.1.0:bytes",
+        "//cargo/vendor/either-1.6.1:either",
+        "//cargo/vendor/figment-0.10.6:figment",
+        "//cargo/vendor/futures-0.3.18:futures",
+        "//cargo/vendor/indexmap-1.7.0:indexmap",
+        "//cargo/vendor/log-0.4.14:log",
+        "//cargo/vendor/memchr-2.4.1:memchr",
+        "//cargo/vendor/multer-2.0.1:multer",
+        "//cargo/vendor/num_cpus-1.13.0:num_cpus",
+        "//cargo/vendor/parking_lot-0.11.2:parking_lot",
+        "//cargo/vendor/pin-project-lite-0.2.7:pin_project_lite",
+        "//cargo/vendor/rand-0.8.4:rand",
+        "//cargo/vendor/ref-cast-1.0.6:ref_cast",
+        "//cargo/vendor/rocket_http-0.5.0-rc.1:rocket_http",
+        "//cargo/vendor/serde-1.0.130:serde",
+        "//cargo/vendor/state-0.5.2:state",
+        "//cargo/vendor/tempfile-3.2.0:tempfile",
+        "//cargo/vendor/time-0.2.27:time",
+        "//cargo/vendor/tokio-1.14.0:tokio",
+        "//cargo/vendor/tokio-stream-0.1.8:tokio_stream",
+        "//cargo/vendor/tokio-util-0.6.9:tokio_util",
+        "//cargo/vendor/ubyte-0.10.1:ubyte",
+        "//cargo/vendor/yansi-0.5.0:yansi",
+    ],
+)
+
+# Unsupported target "absolute-uris-okay-issue-443" with type "test" omitted
+
+# Unsupported target "can-correct-bad-local-uri" with type "test" omitted
+
+# Unsupported target "catcher-cookies-1213" with type "test" omitted
+
+# Unsupported target "conditionally-set-server-header-996" with type "test" omitted
+
+# Unsupported target "config-secret-key-1500" with type "test" omitted
+
+# Unsupported target "derive-reexports" with type "test" omitted
+
+# Unsupported target "encoded-uris" with type "test" omitted
+
+# Unsupported target "fairing_before_head_strip-issue-546" with type "test" omitted
+
+# Unsupported target "file_server" with type "test" omitted
+
+# Unsupported target "flash-lazy-removes-issue-466" with type "test" omitted
+
+# Unsupported target "form-validation-names" with type "test" omitted
+
+# Unsupported target "form_method-issue-45" with type "test" omitted
+
+# Unsupported target "form_value_decoding-issue-82" with type "test" omitted
+
+# Unsupported target "form_value_from_encoded_str-issue-1425" with type "test" omitted
+
+# Unsupported target "head_handling" with type "test" omitted
+
+# Unsupported target "http_uri_serde" with type "test" omitted
+
+# Unsupported target "launch-inspect" with type "test" omitted
+
+# Unsupported target "limits" with type "test" omitted
+
+# Unsupported target "local-client-access-runtime-in-drop" with type "test" omitted
+
+# Unsupported target "local-request-content-type-issue-505" with type "test" omitted
+
+# Unsupported target "local_request_private_cookie-issue-368" with type "test" omitted
+
+# Unsupported target "many-cookie-jars-at-once" with type "test" omitted
+
+# Unsupported target "mapped-base-issue-1262" with type "test" omitted
+
+# Unsupported target "mount_point" with type "test" omitted
+
+# Unsupported target "nested-fairing-attaches" with type "test" omitted
+
+# Unsupported target "on_launch_fairing_can_inspect_port" with type "test" omitted
+
+# Unsupported target "panic-handling" with type "test" omitted
+
+# Unsupported target "precise-content-type-matching" with type "test" omitted
+
+# Unsupported target "recursive-singleton-fairing" with type "test" omitted
+
+# Unsupported target "redirect_from_catcher-issue-113" with type "test" omitted
+
+# Unsupported target "replace-content-type-518" with type "test" omitted
+
+# Unsupported target "responder_lifetime-issue-345" with type "test" omitted
+
+# Unsupported target "route_guard" with type "test" omitted
+
+# Unsupported target "scoped-uri" with type "test" omitted
+
+# Unsupported target "segments-issues-41-86" with type "test" omitted
+
+# Unsupported target "sentinel" with type "test" omitted
+
+# Unsupported target "session-cookies-issue-1506" with type "test" omitted
+
+# Unsupported target "shield" with type "test" omitted
+
+# Unsupported target "strict_and_lenient_forms" with type "test" omitted
+
+# Unsupported target "timer-on-attach" with type "test" omitted
+
+# Unsupported target "tls-config-from-source-1503" with type "test" omitted
+
+# Unsupported target "twice_managed_state" with type "test" omitted
+
+# Unsupported target "typed-uri-docs-redef-issue-1373" with type "test" omitted
+
+# Unsupported target "unsound-local-request-1312" with type "test" omitted
+
+# Unsupported target "untracked-vs-tracked" with type "test" omitted
+
+# Unsupported target "uri-percent-encoding-issue-808" with type "test" omitted

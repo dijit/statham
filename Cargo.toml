@@ -1,0 +1,23 @@
+[package]
+name = "statham"
+version = "0.0.1"
+edition = "2021"
+
+[[bin]]
+name = "agent"
+path = "agent/src/main.rs"
+
+[[bin]]
+name = "server"
+path = "server/src/main.rs"
+
+[dependencies]
+log = "=0.4.14"
+fern = "=0.6.0"
+
+[dependencies.rocket]
+version = "=0.5.0-rc.1"
+
+[dependencies.diesel]
+version = ">=1.4.8"
+features = ["postgres"]

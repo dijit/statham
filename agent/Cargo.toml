@@ -1,0 +1,27 @@
+[package]
+name = "statham"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "agent"
+path = "src/main.rs"
+
+[dependencies]
+
+[package.metadata.raze]
+workspace_path = "//cargo"
+targets = [
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+]
+output_buildfile_suffix = "BUILD.bazel"
+gen_workspace_prefix = "vendored_statham_library"
+genmode = "Vendored"
+package_aliases_dir = "cargo"
+default_gen_buildrs = false

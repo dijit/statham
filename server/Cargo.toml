@@ -1,0 +1,113 @@
+[package]
+name = "statham"
+version = "0.0.1"
+edition = "2021"
+
+[[bin]]
+name = "server"
+path = "src/main.rs"
+
+[dependencies]
+log = "=0.4.14"
+fern = "=0.6.0"
+
+[dependencies.rocket]
+version = "=0.5.0-rc.1"
+
+[dependencies.diesel]
+version = ">=1.4.8"
+features = ["postgres"]
+
+
+[package.metadata.raze]
+workspace_path = "//cargo"
+targets = [
+    #"aarch64-apple-darwin",
+    #"aarch64-unknown-linux-gnu",
+    #"x86_64-apple-darwin",
+    #"x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+]
+output_buildfile_suffix = "BUILD.bazel"
+gen_workspace_prefix = "vendored_statham_library"
+genmode = "Vendored"
+package_aliases_dir = "cargo"
+default_gen_buildrs = false
+
+[package.metadata.raze.crates.proc-macro2.'<=1.0.32']
+additional_flags = [
+    "--cfg=use_proc_macro",
+    "--cfg=wrap_proc_macro",
+]
+
+[package.metadata.raze.crates.libc.'0.2.108']
+additional_flags = [
+  "--cfg=libc_priv_mod_use",
+  "--cfg=libc_union",
+  "--cfg=libc_const_size_of",
+  "--cfg=libc_align",
+  "--cfg=libc_core_cvoid",
+  "--cfg=libc_packedN",
+  "--cfg=libc_cfg_target_vendor",
+]
+
+[package.metadata.raze.crates.time.'0.2.27']
+additional_flags = [
+  "--cfg=__time_02_use_trait_as_underscore",
+  "--cfg=__time_02_nonzero_signed",
+  "--cfg=__time_02_instant_checked_ops",
+  "--cfg=__time_02_supports_non_exhaustive",
+]
+
+[package.metadata.raze.crates.standback.'0.2.17']
+additional_flags = [
+  "--cfg=__standback_before_1_31",
+  "--cfg=__standback_before_1_32",
+  "--cfg=__standback_before_1_33",
+  "--cfg=__standback_before_1_34",
+  "--cfg=__standback_before_1_35",
+  "--cfg=__standback_before_1_36",
+  "--cfg=__standback_before_1_37",
+  "--cfg=__standback_before_1_38",
+  "--cfg=__standback_before_1_39",
+  "--cfg=__standback_before_1_40",
+  "--cfg=__standback_before_1_41",
+  "--cfg=__standback_before_1_42",
+  "--cfg=__standback_before_1_43",
+  "--cfg=__standback_before_1_44",
+  "--cfg=__standback_before_1_45",
+  "--cfg=__standback_before_1_46",
+  "--cfg=__standback_before_1_47",
+  "--cfg=__standback_before_1_48",
+  "--cfg=__standback_before_1_49",
+  "--cfg=__standback_before_1_50",
+  "--cfg=__standback_before_1_51",
+  "--cfg=__standback_before_1_52",
+  "--cfg=__standback_since_1_53",
+  "--cfg=__standback_since_1_54",
+  "--cfg=__standback_since_1_55",
+  "--cfg=__standback_since_1_56",
+]
+
+#[package.metadata.raze.crates.ubyte.'<=0.10.1']
+#additional_flags = [
+#    "--cfg='feature=serde'",
+#]
+
+[package.metadata.raze.crates.log.'*']
+additional_flags = [
+  "--cfg=atomic_cas",
+]
+
+[package.metadata.raze.crates.serde.'*']
+gen_buildrs = true
+
+[package.metadata.raze.crates.indexmap.'*']
+additional_flags = [
+  "--cfg=has_std",
+]
+
+#[package.metadata.raze.crates.socket2.'*']
+#additional_deps = [
+#    "//cargo/vendor/libc-0.2.108:libc",
+#]
