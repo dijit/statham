@@ -89,25 +89,33 @@ additional_flags = [
   "--cfg=__standback_since_1_56",
 ]
 
-#[package.metadata.raze.crates.ubyte.'<=0.10.1']
-#additional_flags = [
-#    "--cfg='feature=serde'",
-#]
-
 [package.metadata.raze.crates.log.'*']
 additional_flags = [
   "--cfg=atomic_cas",
 ]
 
 [package.metadata.raze.crates.serde.'*']
-gen_buildrs = true
+#gen_buildrs = true
+additional_flags = [
+  "--cfg=ops_bound",
+  "--cfg=core_reverse",
+  "--cfg=de_boxed_c_str",
+  "--cfg=de_boxed_path",
+  "--cfg=core_duration",
+  "--cfg=integer128",
+  "--cfg=range_inclusive",
+  "--cfg=iterator_try_fold",
+  "--cfg=num_nonzero",
+  "--cfg=serde_derive",
+  "--cfg=core_try_from",
+  "--cfg=num_nonzero_signed",
+  "--cfg=systemtime_checked_add",
+  # Removes 32bit support:
+  "--cfg=std_atomic64",
+  "--cfg=std_atomic",
+]
 
 [package.metadata.raze.crates.indexmap.'*']
 additional_flags = [
   "--cfg=has_std",
 ]
-
-#[package.metadata.raze.crates.socket2.'*']
-#additional_deps = [
-#    "//cargo/vendor/libc-0.2.108:libc",
-#]
