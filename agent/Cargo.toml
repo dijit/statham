@@ -10,6 +10,12 @@ name = "agent"
 path = "src/main.rs"
 
 [dependencies]
+log = "=0.4.14"
+fern = "=0.6.0"
+
+[target.x86_64-pc-windows-msvc.dependencies.winapi]
+version = ">=0.3.9"
+
 
 [package.metadata.raze]
 workspace_path = "//cargo"
@@ -25,3 +31,6 @@ gen_workspace_prefix = "vendored_statham_library"
 genmode = "Vendored"
 package_aliases_dir = "cargo"
 default_gen_buildrs = false
+
+[package.metadata.raze.winapi.'*']
+gen_buildrs = true
