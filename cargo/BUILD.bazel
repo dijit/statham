@@ -1,5 +1,5 @@
 """
-generated
+@generated
 cargo-raze generated Bazel file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
@@ -12,15 +12,6 @@ licenses([
 ])
 
 # Aliased targets
-alias(
-    name = "diesel",
-    actual = "//cargo/vendor/diesel-1.4.8:diesel",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
-
 alias(
     name = "fern",
     actual = "//cargo/vendor/fern-0.6.0:fern",
@@ -42,6 +33,15 @@ alias(
 alias(
     name = "rocket",
     actual = "//cargo/vendor/rocket-0.5.0-rc.1:rocket",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "rocket_sync_db_pools",
+    actual = "//cargo/vendor/rocket_sync_db_pools-0.1.0-rc.1:rocket_sync_db_pools",
     tags = [
         "cargo-raze",
         "manual",

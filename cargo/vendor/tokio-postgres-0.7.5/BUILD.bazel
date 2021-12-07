@@ -1,0 +1,76 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "bench" with type "bench" omitted
+
+rust_library(
+    name = "tokio_postgres",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+        "runtime",
+    ],
+    crate_root = "src/lib.rs",
+    data = [],
+    edition = "2018",
+    proc_macro_deps = [
+        "//cargo/vendor/async-trait-0.1.51:async_trait",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.7.5",
+    # buildifier: leave-alone
+    deps = [
+        "//cargo/vendor/byteorder-1.4.3:byteorder",
+        "//cargo/vendor/bytes-1.1.0:bytes",
+        "//cargo/vendor/fallible-iterator-0.2.0:fallible_iterator",
+        "//cargo/vendor/futures-0.3.18:futures",
+        "//cargo/vendor/log-0.4.14:log",
+        "//cargo/vendor/parking_lot-0.11.2:parking_lot",
+        "//cargo/vendor/percent-encoding-2.1.0:percent_encoding",
+        "//cargo/vendor/phf-0.10.0:phf",
+        "//cargo/vendor/pin-project-lite-0.2.7:pin_project_lite",
+        "//cargo/vendor/postgres-protocol-0.6.2:postgres_protocol",
+        "//cargo/vendor/postgres-types-0.2.2:postgres_types",
+        "//cargo/vendor/socket2-0.4.2:socket2",
+        "//cargo/vendor/tokio-1.14.0:tokio",
+        "//cargo/vendor/tokio-util-0.6.9:tokio_util",
+    ],
+)
+
+# Unsupported target "test" with type "test" omitted
