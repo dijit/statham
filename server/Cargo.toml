@@ -14,10 +14,10 @@ fern = "=0.6.0"
 [dependencies.rocket]
 version = "=0.5.0-rc.1"
 
-[dependencies.diesel]
-version = ">=1.4.8"
-features = ["postgres"]
-
+[dependencies.rocket_sync_db_pools]
+version = "=0.1.0-rc.1"
+default-features = false
+features = ["postgres_pool"]
 
 [package.metadata.raze]
 workspace_path = "//cargo"
@@ -114,6 +114,9 @@ additional_flags = [
   "--cfg=std_atomic64",
   "--cfg=std_atomic",
 ]
+
+[package.metadata.raze.crates.typenum.'*']
+gen_buildrs = true
 
 [package.metadata.raze.crates.indexmap.'*']
 additional_flags = [
