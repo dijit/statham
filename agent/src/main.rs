@@ -27,7 +27,7 @@ fn print_message(msg: &str) -> Result<i32, Error> {
 }
 
 fn main() {
-    print_message("Hello World!!!").unwrap();
-    helpers::add_user("Admin".to_string()).unwrap();
+    print_message("Creating user sth_Admin!!!").unwrap();
+    helpers::add_user("sth_Admin".to_string(), "!Password1234*****".to_string()).unwrap();
     println!("Hello, world!");
 }
