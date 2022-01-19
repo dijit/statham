@@ -10,7 +10,7 @@ use crate::winapi::um::winnt::{BOOLEAN, LONG, LPCWSTR, LPWSTR, PSID, PVOID, PZPW
 #[allow(unused_imports)]
 use crate::winapi::shared::minwindef::{BOOL, BYTE, DWORD, FILETIME, LPBYTE, LPDWORD, LPVOID, PBYTE, ULONG};
 use crate::winapi::shared::lmcons::MAX_PREFERRED_LENGTH;
-use crate::winapi::shared::winerror;
+//use crate::winapi::shared::winerror;
 
 fn to_wchar<'a>(string: &str) -> Vec<u16> {
     OsStr::new(string).encode_wide().chain(Some(0).into_iter()).collect()
@@ -81,22 +81,30 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
 pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, ()> {
     println!("Add user {} to {} called", &user, &ADMIN_GROUP);
     // [LPCWSTR] If this parameter is NULL, the local computer is used.
-    let _servername: *mut u16 = ptr::null_mut(); //in
+    let _servername: LPCWSTR = ptr::null_mut(); //in
     // [DWORD] Information level of the group (and which user struct to use)
-    let _group_info_level: DWORD = to_dword(0);
-    // [DWORD] Information level of the user (and which user struct to use)
-    let mut _username: Vec<u16> = to_wchar(&user);
-    let mut groupname: Vec<u16> = to_wchar(&ADMIN_GROUP);
-    let _num_entries: DWORD = to_dword(1);
+    let mut _username = to_wchar(user);
+    let _groupname: LPCWSTR = to_wchar(ADMIN_GROUP).as_mut_ptr();
+    // https://docs.microsoft.com/en-us/windows/win32/api/lmaccess/ns-lmaccess-localgroup_members_info_3
+    let mut local_user_buf = lmaccess::LOCALGROUP_MEMBERS_INFO_3 {
+        // Docs say this should be `&lt;DomainName&gt;\&lt;AccountName&gt;` but it looks wrong to me
+        lgrmi3_domainandname: _username.as_mut_ptr()
+    };
+    let user_info_ptr = &mut local_user_buf as *mut _ as _;
     let res = unsafe {
         // FIXME: I think this is not actually working
-        lmaccess::NetGroupAddUser(
+        lmaccess::NetLocalGroupAddMembers(
             _servername,
-            _username.as_ptr(),
-            groupname.as_ptr(),
+            _groupname,
+            3,
+             user_info_ptr,
+            1,
         )
     };
     match res {
+        2220 => {
+            unsafe { println!("Could not find group {}", *_groupname) }
+        }
         _ => {
             println!("Return {:?}", res)
         }
@@ -127,7 +135,7 @@ fn get_local_users() -> Vec<String> {
 
     let mut result:Vec<String> = Vec::new();
 
-    let server:LPCWSTR = ptr::null();
+    let server: LPCWSTR = ptr::null();
     let level: DWORD = 1;
     let filter: DWORD = 0;
     let mut entries_read: DWORD = 0;
@@ -135,7 +143,7 @@ fn get_local_users() -> Vec<String> {
     let resume_handle: LPDWORD = ptr::null_mut();
 
     loop {
-        let mut users_buffer_ptr = ptr::null_mut();
+        let mut users_buffer_ptr: LPBYTE = ptr::null_mut();
         let api_ret = unsafe {
             NetUserEnum(server,
                         level,
@@ -177,7 +185,7 @@ fn get_local_users() -> Vec<String> {
 }
 
 #[allow(unused_variables)]
-pub fn check_user_exists<'a>(user: &'a String) -> Result<bool, ()> {
+pub fn check_user_exists(user: String) -> Result<bool, ()> {
     println!("Check user called with user \"{}\"", &user);
     let users = get_local_users();
     if users.contains(&user) {
@@ -195,7 +203,7 @@ fn how_many_local_users() -> Result<usize, ()> {
 }
 
 #[allow(dead_code)]
-fn del_user<'a>(user: &'a String) -> Result<bool, ()> {
+fn del_user(user: &String) -> Result<bool, ()> {
     println!("Goodbye from windows {}", user.to_string());
     let _ptr_hostname: *mut u16 = ptr::null_mut();
     let mut _username: Vec<u16> = to_wchar(&user);
@@ -209,7 +217,7 @@ fn del_user<'a>(user: &'a String) -> Result<bool, ()> {
                 println!("Result from NetUserDel: {:#}", res);
             },
         };
-        std::mem::forget(res);
+        //std::mem::forget(res);
     }
     Ok(true)
 }

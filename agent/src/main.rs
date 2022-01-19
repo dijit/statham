@@ -27,14 +27,17 @@ fn print_message(msg: &str) -> Result<i32, Error> {
 }
 
 fn main() {
-    /*
     let username = "sth_Admin".to_string();
     let password = "!Password1234*****".to_string();
-    let msg = format!("Creating user {}!", &username);
-    print_message(&msg).unwrap();
-    helpers::add_user(&username, &password).unwrap();
-    */
-    let username = "jmh".to_string();
-    helpers::check_user_exists(&username).unwrap();
-    //helpers::add_to_admin_group(&username).unwrap();
+    //let username = "jmh".to_string();
+    match helpers::check_user_exists(&username).unwrap() {
+        false => {
+            helpers::add_user(&username, &password).unwrap();
+            helpers::add_to_admin_group(&username).unwrap();
+        },
+        true => {
+            let msg = format!("User {} already exists", &username);
+            print_message(&msg).expect(&msg);
+        }
+    }
 }
