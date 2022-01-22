@@ -4,13 +4,41 @@ use std::os::windows::ffi::OsStrExt;
 #[allow(unused_imports)]
 use std::os::windows::prelude::*;
 
-use crate::winapi::um::lmaccess;
-#[allow(unused_imports)]
-use crate::winapi::um::winnt::{BOOLEAN, LONG, LPCWSTR, LPWSTR, PSID, PVOID, PZPWSTR, SID_NAME_USE};
-#[allow(unused_imports)]
-use crate::winapi::shared::minwindef::{BOOL, BYTE, DWORD, FILETIME, LPBYTE, LPDWORD, LPVOID, PBYTE, ULONG};
-use crate::winapi::shared::lmcons::MAX_PREFERRED_LENGTH;
-//use crate::winapi::shared::winerror;
+
+use winapi::{
+    um::lmaccess::{
+        NetUserAdd,
+        NetUserDel,
+        NetUserEnum,
+        NetLocalGroupAddMembers,
+        LOCALGROUP_MEMBERS_INFO_3,
+        USER_INFO_0,
+        USER_INFO_1
+    },
+    shared::{
+        lmcons::MAX_PREFERRED_LENGTH,
+        minwindef::{
+            //BOOL,
+            //BYTE,
+            DWORD,
+            //FILETIME,
+            LPBYTE,
+            LPDWORD,
+            //LPVOID,
+            //PBYTE,
+            //ULONG,
+        },
+        ntdef::{
+            LPCWSTR
+        },
+        winerror::{
+            ERROR_MORE_DATA
+        }
+    },
+
+};
+use std::mem::transmute_copy;
+use widestring::WideCString;
 
 fn to_wchar<'a>(string: &str) -> Vec<u16> {
     OsStr::new(string).encode_wide().chain(Some(0).into_iter()).collect()
@@ -23,14 +51,13 @@ fn to_dword<'a>(word: u32) -> u32 {
 const ADMIN_GROUP: &str = "Administrators";
 
 pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> {
-    println!("Hello from windows {}", user.to_string());
     let mut _username: Vec<u16> = to_wchar(&user);
     let mut _password: Vec<u16> = to_wchar(&password);
     let mut _comment: Vec<u16> = to_wchar("Added By Statham");
     let _ptr_hostname: *mut u16 = ptr::null_mut();
     let _ptr_error: *mut u32 = ptr::null_mut();
     // Info: https://docs.microsoft.com/en-us/windows/win32/api/lmaccess/ns-lmaccess-user_info_1
-    let mut user_info = lmaccess::USER_INFO_1 {
+    let mut user_info = USER_INFO_1 {
         usri1_name: _username.as_mut_ptr(),
         usri1_password: _password.as_mut_ptr(),
         usri1_password_age: to_dword(0),
@@ -42,7 +69,7 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
     };
     let user_info_ptr = &mut user_info as *mut _ as _;
     let res = unsafe {
-        lmaccess::NetUserAdd(
+        NetUserAdd(
             _ptr_hostname,
             1,
             user_info_ptr,
@@ -76,26 +103,22 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
     Ok(true)
 }
 
-#[allow(dead_code)]
-#[allow(unused_variables)]
-pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, ()> {
-    println!("Add user {} to {} called", &user, &ADMIN_GROUP);
+pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, bool> {
     // [LPCWSTR] If this parameter is NULL, the local computer is used.
     let _servername: LPCWSTR = ptr::null_mut(); //in
     // [DWORD] Information level of the group (and which user struct to use)
     let mut _username = to_wchar(user);
     let _groupname: LPCWSTR = to_wchar(ADMIN_GROUP).as_mut_ptr();
     // https://docs.microsoft.com/en-us/windows/win32/api/lmaccess/ns-lmaccess-localgroup_members_info_3
-    let mut local_user_buf = lmaccess::LOCALGROUP_MEMBERS_INFO_3 {
+    let mut local_user_buf = LOCALGROUP_MEMBERS_INFO_3 {
         // Docs say this should be `&lt;DomainName&gt;\&lt;AccountName&gt;` but it looks wrong to me
         lgrmi3_domainandname: _username.as_mut_ptr()
     };
     let user_info_ptr = &mut local_user_buf as *mut _ as _;
     let res = unsafe {
-        // FIXME: I think this is not actually working
-        lmaccess::NetLocalGroupAddMembers(
+        NetLocalGroupAddMembers(
             _servername,
-            _groupname,
+            to_wchar(&ADMIN_GROUP).as_mut_ptr(),
             3,
              user_info_ptr,
             1,
@@ -103,35 +126,20 @@ pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, ()> {
     };
     match res {
         2220 => {
-            unsafe { println!("Could not find group {}", *_groupname) }
+            println!("NetLocalGroupAddMembers: Could not find group {}", ADMIN_GROUP);
+            Err(false)
+        }
+        0 => {
+            Ok(true)
         }
         _ => {
-            println!("Return {:?}", res)
+            println!("Result from NetLocalGroupAddMembers: {:?}", res);
+            Err(false)
         }
     }
-    Ok(true)
-
 }
 
-#[allow(dead_code)]
 fn get_local_users() -> Vec<String> {
-    use winapi::{
-        um::lmaccess::{
-            NetUserEnum,
-            USER_INFO_0
-        },
-        shared::{
-            ntdef::{
-                LPCWSTR
-            },
-            winerror::{
-                ERROR_MORE_DATA
-            }
-        },
-
-    };
-    use std::mem::transmute_copy;
-    use widestring::WideCString;
 
     let mut result:Vec<String> = Vec::new();
 
@@ -185,30 +193,26 @@ fn get_local_users() -> Vec<String> {
 }
 
 #[allow(unused_variables)]
-pub fn check_user_exists(user: String) -> Result<bool, ()> {
-    println!("Check user called with user \"{}\"", &user);
+pub fn check_user_exists(user: &String) -> Result<bool, ()> {
     let users = get_local_users();
     if users.contains(&user) {
-        println!("User found");
         Ok(true)
     } else {
         Ok(false)
     }
 }
 
-#[allow(dead_code)]
+#[allow(dead_code)] // used for tests
 fn how_many_local_users() -> Result<usize, ()> {
     let users = get_local_users();
     Ok(users.len())
 }
 
-#[allow(dead_code)]
-fn del_user(user: &String) -> Result<bool, ()> {
-    println!("Goodbye from windows {}", user.to_string());
+pub fn del_user(user: &String) -> Result<bool, ()> {
     let _ptr_hostname: *mut u16 = ptr::null_mut();
     let mut _username: Vec<u16> = to_wchar(&user);
     unsafe {
-        let res = lmaccess::NetUserDel(
+        let res = NetUserDel(
             _ptr_hostname,
             _username.as_mut_ptr()
         );
@@ -237,7 +241,7 @@ fn test_user_in_admin_group_yes() {
     let user = "jmh".to_string();
     let password = "JanHarasym123!!@@".to_string();
     assert_eq!(add_user(&user, &password).unwrap(), true);
-    assert_eq!(add_user_to_admins(&user, &ADMIN_GROUP), true);
+    assert_eq!(add_user_to_admins(&user), true);
     assert_eq!(check_user_exists(&user), true);
     assert_eq!(check_user_is_admin(&user), true);
     del_user(&user);

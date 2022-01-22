@@ -8,5 +8,8 @@ rust_binary(
     deps = [
         "//cargo:fern",
         "//cargo:log",
+        "//cargo:widestring",
+        "//cargo:winapi",
+        "//cargo:winres",
     ],
 )
