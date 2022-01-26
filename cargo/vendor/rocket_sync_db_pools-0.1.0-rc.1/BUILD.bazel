@@ -1,0 +1,67 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+rust_library(
+    name = "rocket_sync_db_pools",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "postgres",
+        "postgres_pool",
+        "r2d2_postgres",
+    ],
+    crate_root = "src/lib.rs",
+    data = [],
+    edition = "2018",
+    proc_macro_deps = [
+        "//cargo/vendor/rocket_sync_db_pools_codegen-0.1.0-rc.1:rocket_sync_db_pools_codegen",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.1.0-rc.1",
+    # buildifier: leave-alone
+    deps = [
+        "//cargo/vendor/postgres-0.19.2:postgres",
+        "//cargo/vendor/r2d2-0.8.9:r2d2",
+        "//cargo/vendor/r2d2_postgres-0.18.1:r2d2_postgres",
+        "//cargo/vendor/rocket-0.5.0-rc.1:rocket",
+        "//cargo/vendor/serde-1.0.130:serde",
+        "//cargo/vendor/tokio-1.14.0:tokio",
+    ],
+)
+
+# Unsupported target "databases" with type "test" omitted

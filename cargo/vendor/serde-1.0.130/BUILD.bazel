@@ -1,0 +1,78 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "build-script-build" with type "custom-build" omitted
+
+rust_library(
+    name = "serde",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "alloc",
+        "default",
+        "derive",
+        "serde_derive",
+        "std",
+    ],
+    crate_root = "src/lib.rs",
+    data = [],
+    edition = "2015",
+    proc_macro_deps = [
+        "//cargo/vendor/serde_derive-1.0.130:serde_derive",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+        "--cfg=ops_bound",
+        "--cfg=core_reverse",
+        "--cfg=de_boxed_c_str",
+        "--cfg=de_boxed_path",
+        "--cfg=core_duration",
+        "--cfg=integer128",
+        "--cfg=range_inclusive",
+        "--cfg=iterator_try_fold",
+        "--cfg=num_nonzero",
+        "--cfg=serde_derive",
+        "--cfg=core_try_from",
+        "--cfg=num_nonzero_signed",
+        "--cfg=systemtime_checked_add",
+        "--cfg=std_atomic64",
+        "--cfg=std_atomic",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "1.0.130",
+    # buildifier: leave-alone
+    deps = [
+    ],
+)

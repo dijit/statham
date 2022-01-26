@@ -1,0 +1,80 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "build-script-build" with type "custom-build" omitted
+
+rust_library(
+    name = "time",
+    srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
+    crate_features = [
+        "default",
+        "deprecated",
+        "libc",
+        "std",
+        "stdweb",
+        "winapi",
+    ],
+    crate_root = "src/lib.rs",
+    data = [],
+    edition = "2018",
+    proc_macro_deps = [
+        "//cargo/vendor/const_fn-0.4.8:const_fn",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+        "--cfg=__time_02_use_trait_as_underscore",
+        "--cfg=__time_02_nonzero_signed",
+        "--cfg=__time_02_instant_checked_ops",
+        "--cfg=__time_02_supports_non_exhaustive",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.2.27",
+    # buildifier: leave-alone
+    deps = [
+        "//cargo/vendor/standback-0.2.17:standback",
+        "//cargo/vendor/time-macros-0.1.1:time_macros",
+    ] + selects.with_or({
+        # cfg(unix)
+        (
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+            "//cargo/vendor/libc-0.2.108:libc",
+        ],
+        "//conditions:default": [],
+    }),
+)
