@@ -29,9 +29,19 @@ fn print_message(msg: &str) -> Result<i32, Error> {
 }
 
 fn main() {
+    let out = format!("local user count: {}", helpers::how_many_local_users().expect("Failure to call"));
+    print_message(&out).expect("Failed to write");
+    /*
     let username = "sth_Admin".to_string();
     let password = "!Password1234*****".to_string();
-    //let username = "jmh".to_string();
+    match helpers::check_user_exists(&username) {
+        Err(_) => eprintln!("Something unexpected happened"),
+        Ok(true) => println!("Discovered that the user exists"),
+        Ok(false) => println!("Did not find that user"),
+    };
+     */
+
+    /*
     match helpers::check_user_exists(&username).unwrap() {
         false => {
             let msg = format!("User {} not found, adding now", &username);
@@ -42,7 +52,8 @@ fn main() {
         true => {
             let msg = format!("User {} exists, deleting now", &username);
             print_message(&msg).expect(&msg);
-            helpers::del_user(&username).unwrap();
+            helpers::del_user(&username).expect("Unable to delete user");
         }
     }
+     */
 }

@@ -15,14 +15,15 @@ name = "agent"
 path = "src/main.rs"
 
 [dependencies]
-log = "=0.4.14"
-fern = "=0.6.0"
+log = "=0.4.20"
+fern = "=0.6.2"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["winuser", "lmaccess", "minwindef", "winerror"] }
-widestring = { version = "0.5.1"}
-[target.'cfg(windows)'.build-dependencies.winres]
-version = "0.1.12"
+widestring = { version = "1.0.2" }
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"
 
 
 [package.metadata.raze]

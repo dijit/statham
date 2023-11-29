@@ -1,8 +1,11 @@
+use winapi::shared::minwindef::BYTE;
 use std::ffi::OsStr;
 use std::ptr;
 use std::os::windows::ffi::OsStrExt;
 #[allow(unused_imports)]
 use std::os::windows::prelude::*;
+use winapi::um::errhandlingapi::GetLastError;
+use log::warn;
 
 
 use winapi::{
@@ -39,6 +42,11 @@ use winapi::{
 };
 use std::mem::transmute_copy;
 use widestring::WideCString;
+
+macro_rules! wprintln {
+    ($fmt:expr) => (print!(concat!($fmt, "\r\n")));
+    ($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\r\n"), $($arg)*));
+}
 
 fn to_wchar<'a>(string: &str) -> Vec<u16> {
     OsStr::new(string).encode_wide().chain(Some(0).into_iter()).collect()
@@ -78,28 +86,28 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
     };
     match res {
         5 => {
-            println!("Return from lmaccess::NetUserAdd = 5; Access Denied when creating user");
+            wprintln!("Return from lmaccess::NetUserAdd = 5; Access Denied when creating user");
         },
         87 => {
-            println!("Return from lmaccess::NetUserAdd = 87; Unable to add a user to administrators directly");
+            wprintln!("Return from lmaccess::NetUserAdd = 87; Unable to add a user to administrators directly");
         },
         2202 => {
-            println!("Return from lmaccess::NetUserAdd = 2202; Invalid username or group");
+            wprintln!("Return from lmaccess::NetUserAdd = 2202; Invalid username or group");
         },
         2224 => {
-            println!("Return from lmaccess::NetUserAdd = 2224; User already exists");
+            wprintln!("Return from lmaccess::NetUserAdd = 2224; User already exists");
         },
         2245 => {
-            println!("Return from lmaccess::NetUserAdd = 2245; Password complexity requirements not held");
+            wprintln!("Return from lmaccess::NetUserAdd = 2245; Password complexity requirements not held");
         },
         _ => {
-            println!("Result from NetUserAdd: {:#}", res);
+            wprintln!("Result from NetUserAdd: {:#}", res);
         },
     };
     if !_ptr_error.is_null() {
-       println!("FAILED")
+       wprintln!("FAILED")
     }
-    println!("Created user {}", &user);
+    wprintln!("Created user {}", &user);
     Ok(true)
 }
 
@@ -126,14 +134,14 @@ pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, bool> {
     };
     match res {
         2220 => {
-            println!("NetLocalGroupAddMembers: Could not find group {}", ADMIN_GROUP);
+            wprintln!("NetLocalGroupAddMembers: Could not find group {}", ADMIN_GROUP);
             Err(false)
         }
         0 => {
             Ok(true)
         }
         _ => {
-            println!("Result from NetLocalGroupAddMembers: {:?}", res);
+            wprintln!("Result from NetLocalGroupAddMembers: {:?}", res);
             Err(false)
         }
     }
@@ -149,10 +157,12 @@ fn get_local_users() -> Vec<String> {
     let mut entries_read: DWORD = 0;
     let mut total_entries: DWORD = 0;
     let resume_handle: LPDWORD = ptr::null_mut();
-
     loop {
+        // We must create a new USER_INFO_1 structure each time we call this function
         let mut users_buffer_ptr: LPBYTE = ptr::null_mut();
         let api_ret = unsafe {
+            // https://learn.microsoft.com/en-us/windows/win32/api/lmaccess/nf-lmaccess-netuserenum
+            // crate: https://docs.rs/winapi/0.3.9/winapi/um/lmaccess/fn.NetUserEnum.html
             NetUserEnum(server,
                         level,
                         filter,
@@ -162,6 +172,11 @@ fn get_local_users() -> Vec<String> {
                         &mut total_entries,
                         resume_handle)
         };
+
+        if result == 0 {
+            let err = unsafe { GetLastError() };
+            println!("Query failed with error: {}", err);
+        }
 
         // ADD BETTER ERROR HANDLING
         if api_ret != 0 && api_ret != ERROR_MORE_DATA {
@@ -202,10 +217,42 @@ pub fn check_user_exists(user: &String) -> Result<bool, ()> {
     }
 }
 
+#[derive(Debug)]
+pub struct USER_NAME {
+    usri0_name: LPCWSTR
+}
+
 #[allow(dead_code)] // used for tests
-fn how_many_local_users() -> Result<usize, ()> {
-    let users = get_local_users();
-    Ok(users.len())
+pub fn how_many_local_users() -> Result<usize, ()> {
+    let server_name: LPCWSTR = ptr::null();
+    let level: DWORD = 0;
+    let filter: DWORD = 0x0002;
+    let mut entries_read: DWORD = 0;
+    let mut total_entries: DWORD = 0;
+    let resume_handle: LPDWORD = ptr::null_mut();
+    //let users: Vec<USER_NAME> = Vec::with_capacity(usize::MAX);
+    unsafe {
+        let mut users_buffer_ptr: LPBYTE = ptr::null_mut();
+        let net_user_enum_ret = NetUserEnum(
+                    server_name,
+                    level,
+                    filter,
+                    &mut users_buffer_ptr,
+                    MAX_PREFERRED_LENGTH,
+                    &mut entries_read,
+                    &mut total_entries,
+                    resume_handle
+        );
+        warn!("function_return: {:?}", net_user_enum_ret);
+        let mut users_vec: Vec<USER_NAME> = Vec::with_capacity(total_entries as usize);
+        let _unknown = users_vec.as_mut_ptr() as *mut Vec<USER_NAME>;
+        //let raw_ptr  =  users_buffer_ptr.offset_from(0xf0 as *const BYTE) as *mut Vec<USER_NAME>;
+        //let rust_reference = unsafe { raw_ptr.as_mut() };
+        //if rust_reference.is_none() { println!("you fcked up") };
+        //let rust_reference = rust_reference.unwrap();
+        warn!("users_buffer_ptr: {:?}", users_buffer_ptr);
+    };
+    Ok(total_entries as usize)
 }
 
 pub fn del_user(user: &String) -> Result<bool, ()> {
@@ -218,7 +265,7 @@ pub fn del_user(user: &String) -> Result<bool, ()> {
         );
         match res {
             _ => {
-                println!("Result from NetUserDel: {:#}", res);
+                wprintln!("Result from NetUserDel: {:#}", res);
             },
         };
         //std::mem::forget(res);
