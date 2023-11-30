@@ -16,9 +16,9 @@ log = "=0.4.20"
 fern = "=0.6.2"
 
 [dependencies.rocket]
-version = "=0.5.0"
+version = "=0.5.0-rc.1"
 
 [dependencies.rocket_sync_db_pools]
-version = "=0.1.0"
+version = "=0.1.0-rc.1"
 default-features = false
 features = ["postgres_pool"]
