@@ -180,11 +180,10 @@ fn get_local_users() -> Vec<String> {
             unsafe { NetApiBufferFree(users_buffer_ptr as LPVOID); } // no memory clean up? for shame :|
         }
 
-        // didn't compile for me
-        /*if result == 0 {
+        if result.is_empty() {
             let err = unsafe { GetLastError() };
             println!("Query failed with error: {}", err);
-        }*/
+        }
 
         // ADD BETTER ERROR HANDLING
         if api_ret != 0 && api_ret != ERROR_MORE_DATA {
