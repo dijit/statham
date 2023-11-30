@@ -1,24 +1,15 @@
-use winapi::shared::minwindef::BYTE;
+use log::warn;
 use std::ffi::OsStr;
-use std::ptr;
 use std::os::windows::ffi::OsStrExt;
 #[allow(unused_imports)]
 use std::os::windows::prelude::*;
+use std::ptr;
+use winapi::shared::minwindef::BYTE;
 use winapi::um::errhandlingapi::GetLastError;
-use log::warn;
 
-
+use std::mem::transmute_copy;
+use widestring::WideCString;
 use winapi::{
-    um::lmaccess::{
-        NetUserAdd,
-        NetUserDel,
-        NetUserEnum,
-        NetLocalGroupAddMembers,
-        LOCALGROUP_MEMBERS_INFO_3,
-        USER_INFO_0,
-        USER_INFO_1
-    },
-    um::lmapibuf::NetApiBufferFree,
     shared::{
         lmcons::MAX_PREFERRED_LENGTH,
         minwindef::{
@@ -32,17 +23,15 @@ use winapi::{
             //PBYTE,
             //ULONG,
         },
-        ntdef::{
-            LPCWSTR
-        },
-        winerror::{
-            ERROR_MORE_DATA
-        }
+        ntdef::LPCWSTR,
+        winerror::ERROR_MORE_DATA,
     },
-
+    um::lmaccess::{
+        NetLocalGroupAddMembers, NetUserAdd, NetUserDel, NetUserEnum, LOCALGROUP_MEMBERS_INFO_3,
+        USER_INFO_0, USER_INFO_1,
+    },
+    um::lmapibuf::NetApiBufferFree,
 };
-use std::mem::transmute_copy;
-use widestring::WideCString;
 
 macro_rules! wprintln {
     ($fmt:expr) => (print!(concat!($fmt, "\r\n")));
@@ -50,7 +39,10 @@ macro_rules! wprintln {
 }
 
 fn to_wchar<'a>(string: &str) -> Vec<u16> {
-    OsStr::new(string).encode_wide().chain(Some(0).into_iter()).collect()
+    OsStr::new(string)
+        .encode_wide()
+        .chain(Some(0).into_iter())
+        .collect()
 }
 
 fn to_dword<'a>(word: u32) -> u32 {
@@ -77,36 +69,29 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
         usri1_script_path: to_wchar(&"").as_mut_ptr(),
     };
     let user_info_ptr = &mut user_info as *mut _ as _;
-    let res = unsafe {
-        NetUserAdd(
-            _ptr_hostname,
-            1,
-            user_info_ptr,
-            _ptr_error,
-        )
-    };
+    let res = unsafe { NetUserAdd(_ptr_hostname, 1, user_info_ptr, _ptr_error) };
     match res {
         5 => {
             wprintln!("Return from lmaccess::NetUserAdd = 5; Access Denied when creating user");
-        },
+        }
         87 => {
             wprintln!("Return from lmaccess::NetUserAdd = 87; Unable to add a user to administrators directly");
-        },
+        }
         2202 => {
             wprintln!("Return from lmaccess::NetUserAdd = 2202; Invalid username or group");
-        },
+        }
         2224 => {
             wprintln!("Return from lmaccess::NetUserAdd = 2224; User already exists");
-        },
+        }
         2245 => {
             wprintln!("Return from lmaccess::NetUserAdd = 2245; Password complexity requirements not held");
-        },
+        }
         _ => {
             wprintln!("Result from NetUserAdd: {:#}", res);
-        },
+        }
     };
     if !_ptr_error.is_null() {
-       wprintln!("FAILED")
+        wprintln!("FAILED")
     }
     wprintln!("Created user {}", &user);
     Ok(true)
@@ -115,13 +100,13 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
 pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, bool> {
     // [LPCWSTR] If this parameter is NULL, the local computer is used.
     let _servername: LPCWSTR = ptr::null_mut(); //in
-    // [DWORD] Information level of the group (and which user struct to use)
+                                                // [DWORD] Information level of the group (and which user struct to use)
     let mut _username = to_wchar(user);
     let _groupname: LPCWSTR = to_wchar(ADMIN_GROUP).as_mut_ptr();
     // https://docs.microsoft.com/en-us/windows/win32/api/lmaccess/ns-lmaccess-localgroup_members_info_3
     let mut local_user_buf = LOCALGROUP_MEMBERS_INFO_3 {
         // Docs say this should be `&lt;DomainName&gt;\&lt;AccountName&gt;` but it looks wrong to me
-        lgrmi3_domainandname: _username.as_mut_ptr()
+        lgrmi3_domainandname: _username.as_mut_ptr(),
     };
     let user_info_ptr = &mut local_user_buf as *mut _ as _;
     let res = unsafe {
@@ -129,18 +114,19 @@ pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, bool> {
             _servername,
             to_wchar(&ADMIN_GROUP).as_mut_ptr(),
             3,
-             user_info_ptr,
+            user_info_ptr,
             1,
         )
     };
     match res {
         2220 => {
-            wprintln!("NetLocalGroupAddMembers: Could not find group {}", ADMIN_GROUP);
+            wprintln!(
+                "NetLocalGroupAddMembers: Could not find group {}",
+                ADMIN_GROUP
+            );
             Err(false)
         }
-        0 => {
-            Ok(true)
-        }
+        0 => Ok(true),
         _ => {
             wprintln!("Result from NetLocalGroupAddMembers: {:?}", res);
             Err(false)
@@ -149,8 +135,7 @@ pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, bool> {
 }
 
 fn get_local_users() -> Vec<String> {
-
-    let mut result:Vec<String> = Vec::new();
+    let mut result: Vec<String> = Vec::new();
 
     let server: LPCWSTR = ptr::null();
     let level: DWORD = 1; // level 1 means USER_INFO_1, level 0 means USER_INFO_0
@@ -180,11 +165,10 @@ fn get_local_users() -> Vec<String> {
             unsafe { NetApiBufferFree(users_buffer_ptr as LPVOID); } // no memory clean up? for shame :|
         }
 
-        // didn't compile for me
-        /*if result == 0 {
+        if result.is_empty() {
             let err = unsafe { GetLastError() };
             println!("Query failed with error: {}", err);
-        }*/
+        }
 
         // ADD BETTER ERROR HANDLING
         if api_ret != 0 && api_ret != ERROR_MORE_DATA {
@@ -228,7 +212,7 @@ pub fn check_user_exists(user: &String) -> Result<bool, ()> {
 
 #[derive(Debug)]
 pub struct USER_NAME {
-    usri0_name: LPCWSTR
+    usri0_name: LPCWSTR,
 }
 
 #[allow(dead_code)] // used for tests
@@ -243,14 +227,14 @@ pub fn how_many_local_users() -> Result<usize, ()> {
     unsafe {
         let mut users_buffer_ptr: LPBYTE = ptr::null_mut();
         let net_user_enum_ret = NetUserEnum(
-                    server_name,
-                    level,
-                    filter,
-                    &mut users_buffer_ptr,
-                    MAX_PREFERRED_LENGTH,
-                    &mut entries_read,
-                    &mut total_entries,
-                    resume_handle
+            server_name,
+            level,
+            filter,
+            &mut users_buffer_ptr,
+            MAX_PREFERRED_LENGTH,
+            &mut entries_read,
+            &mut total_entries,
+            resume_handle,
         );
         warn!("function_return: {:?}", net_user_enum_ret);
         let mut users_vec: Vec<USER_NAME> = Vec::with_capacity(total_entries as usize);
@@ -268,14 +252,11 @@ pub fn del_user(user: &String) -> Result<bool, ()> {
     let _ptr_hostname: *mut u16 = ptr::null_mut();
     let mut _username: Vec<u16> = to_wchar(&user);
     unsafe {
-        let res = NetUserDel(
-            _ptr_hostname,
-            _username.as_mut_ptr()
-        );
+        let res = NetUserDel(_ptr_hostname, _username.as_mut_ptr());
         match res {
             _ => {
                 wprintln!("Result from NetUserDel: {:#}", res);
-            },
+            }
         };
         //std::mem::forget(res);
     }
@@ -304,7 +285,6 @@ fn test_user_in_admin_group_yes() {
 }
 */
 
-
 #[test]
 fn test_many_users() {
     let number_of_users = how_many_local_users().unwrap();
@@ -312,9 +292,9 @@ fn test_many_users() {
         let user = format!("sth_jmh_{}", i).to_string();
         let password = "JanHarasym123!!@@".to_string();
         assert_eq!(add_user(&user, &password).unwrap(), true);
-        assert_eq!(number_of_users+1 == how_many_local_users().unwrap(), true);
+        assert_eq!(number_of_users + 1 == how_many_local_users().unwrap(), true);
         assert_eq!(del_user(&user).unwrap(), true);
-    };
+    }
     let new_number_of_users = how_many_local_users().unwrap();
     assert_eq!(new_number_of_users == number_of_users, true);
 }
