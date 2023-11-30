@@ -18,6 +18,7 @@ use winapi::{
         USER_INFO_0,
         USER_INFO_1
     },
+    um::lmapibuf::NetApiBufferFree,
     shared::{
         lmcons::MAX_PREFERRED_LENGTH,
         minwindef::{
@@ -27,7 +28,7 @@ use winapi::{
             //FILETIME,
             LPBYTE,
             LPDWORD,
-            //LPVOID,
+            LPVOID,
             //PBYTE,
             //ULONG,
         },
@@ -152,26 +153,32 @@ fn get_local_users() -> Vec<String> {
     let mut result:Vec<String> = Vec::new();
 
     let server: LPCWSTR = ptr::null();
-    let level: DWORD = 1;
+    let level: DWORD = 1; // level 1 means USER_INFO_1, level 0 means USER_INFO_0
     let filter: DWORD = 0;
     let mut entries_read: DWORD = 0;
     let mut total_entries: DWORD = 0;
-    let resume_handle: LPDWORD = ptr::null_mut();
+    let mut resume_handle: DWORD = 0;
     loop {
         // We must create a new USER_INFO_1 structure each time we call this function
         let mut users_buffer_ptr: LPBYTE = ptr::null_mut();
         let api_ret = unsafe {
             // https://learn.microsoft.com/en-us/windows/win32/api/lmaccess/nf-lmaccess-netuserenum
             // crate: https://docs.rs/winapi/0.3.9/winapi/um/lmaccess/fn.NetUserEnum.html
-            NetUserEnum(server,
-                        level,
-                        filter,
-                        &mut users_buffer_ptr,
-                        MAX_PREFERRED_LENGTH,
-                        &mut entries_read,
-                        &mut total_entries,
-                        resume_handle)
+            NetUserEnum(
+                server,
+                level,
+                filter,
+                &mut users_buffer_ptr,
+                MAX_PREFERRED_LENGTH,
+                &mut entries_read,
+                &mut total_entries,
+                &mut resume_handle,
+            )
         };
+
+        scopeguard::defer! {
+            unsafe { NetApiBufferFree(users_buffer_ptr as LPVOID); } // no memory clean up? for shame :|
+        }
 
         if result.is_empty() {
             let err = unsafe { GetLastError() };
@@ -180,28 +187,29 @@ fn get_local_users() -> Vec<String> {
 
         // ADD BETTER ERROR HANDLING
         if api_ret != 0 && api_ret != ERROR_MORE_DATA {
-            break // API Failed
+            break; // API Failed
         }
 
-        let mut tmpbuffer = users_buffer_ptr;  // Copy pointer to temporary buffer
-        for _i in 0..entries_read as usize { // Iterate over read entries
-            let slice:&[u8] = unsafe {
-                std::slice::from_raw_parts(tmpbuffer, 1 as usize)
-            };
-            let p_user:USER_INFO_0 = unsafe {
-                transmute_copy(&slice[0])
-            };
-            let user_name_wc:WideCString = unsafe {
-                WideCString::from_ptr_str(p_user.usri0_name)
-            };
-            let user_name:String = user_name_wc.to_string_lossy();
-            result.push(user_name);
-            tmpbuffer = unsafe {
-                tmpbuffer.add(56)
-            };
-        }
+        let user_infos_buffer: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                users_buffer_ptr,
+                ::core::mem::size_of::<USER_INFO_1>() * (entries_read as usize),
+            )
+        };
+        let (_, user_info_structs_body, _) = unsafe { user_infos_buffer.align_to::<USER_INFO_1>() };
+        let loop_result = user_info_structs_body
+            .iter()
+            .map(|p_user| {
+                let user_name_wc: WideCString =
+                    unsafe { WideCString::from_ptr_str(p_user.usri1_name) };
+                user_name_wc.to_string_lossy()
+            })
+            .collect::<Vec<_>>();
+
+        result.extend(loop_result);
+
         if api_ret != ERROR_MORE_DATA {
-            break
+            break;
         }
     }
     result
