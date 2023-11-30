@@ -173,7 +173,7 @@ fn get_local_users() -> Vec<String> {
                         resume_handle)
         };
 
-        if result == 0 {
+        if result.is_empty() {
             let err = unsafe { GetLastError() };
             println!("Query failed with error: {}", err);
         }

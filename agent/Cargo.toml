@@ -18,9 +18,12 @@ path = "src/main.rs"
 log = "=0.4.20"
 fern = "=0.6.2"
 
-[target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3.9", features = ["winuser", "lmaccess", "minwindef", "winerror"] }
-widestring = { version = "1.0.2" }
+[target.'cfg(windows)'.dependencies.winapi]
+version = "0.3.9"
+features = ["winuser", "lmaccess", "minwindef", "winerror", "errhandlingapi"]
+
+[target.'cfg(windows)'.dependencies.widestring]
+version = "1.0.2"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.12"
