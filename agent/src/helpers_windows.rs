@@ -91,7 +91,7 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
         usri1_password: _password.as_mut_ptr(),
         usri1_password_age: to_dword(0),
         usri1_priv: to_dword(1),
-        usri1_home_dir: to_wchar(&format!("C:\\users\\{}", &user)).as_mut_ptr(),
+        usri1_home_dir: to_wchar(&"").as_mut_ptr(),
         usri1_comment: _comment.as_mut_ptr(),
         usri1_flags: to_dword(0),
         usri1_script_path: to_wchar(&"").as_mut_ptr(),
@@ -113,10 +113,15 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
             wprintln!("[ERR] lmaccess::NetUserAdd CODE 2224; User already exists");
         }
         2245 => {
-            wprintln!("[ERR] lmaccess::NetUserAdd CODE 2245; Password complexity requirements not held");
+            wprintln!(
+                "[ERR] lmaccess::NetUserAdd CODE 2245; Password complexity requirements not held"
+            );
         }
         _ => {
-            wprintln!("[ERR] lmaccess::NetUserAdd CODE {:#}: Unknown to this program", res);
+            wprintln!(
+                "[ERR] lmaccess::NetUserAdd CODE {:#}: Unknown to this program",
+                res
+            );
         }
     };
     if !_ptr_error.is_null() {
@@ -126,7 +131,7 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
     Ok(true)
 }
 
-pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, bool> {
+pub fn add_to_admin_group(user: &String) -> Result<bool, bool> {
     // [LPCWSTR] If this parameter is NULL, the local computer is used.
     let _servername: LPCWSTR = ptr::null_mut(); //in
                                                 // [DWORD] Information level of the group (and which user struct to use)
@@ -147,6 +152,7 @@ pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, bool> {
             1,
         )
     };
+
     match res {
         2220 => {
             wprintln!(
@@ -157,7 +163,10 @@ pub fn add_to_admin_group<'a>(user: &'a String) -> Result<bool, bool> {
         }
         0 => Ok(true),
         _ => {
-            wprintln!("[ERR] lmaccess::NetLocalGroupAddMembers CODE {:?}: Unknown to this program", res);
+            wprintln!(
+                "[ERR] lmaccess::NetLocalGroupAddMembers CODE {:?}: Unknown to this program",
+                res
+            );
             Err(false)
         }
     }
@@ -218,7 +227,7 @@ fn get_local_users() -> Vec<UserInfo1Native> {
                     0 => Usr1Privs::Guest,
                     1 => Usr1Privs::Standard,
                     2 => Usr1Privs::Administrator,
-                    _ => panic!()
+                    _ => panic!(),
                 };
 
                 UserInfo1Native {
@@ -304,9 +313,15 @@ pub fn del_user(user: &String) -> Result<bool, ()> {
         let res = NetUserDel(_ptr_hostname, _username.as_mut_ptr());
         match res {
             0 => {}
-            2221 => wprintln!("[ERR] 2221 lmaccess::NetUserDel: User {} could not be found", user),
+            2221 => wprintln!(
+                "[ERR] 2221 lmaccess::NetUserDel: User {} could not be found",
+                user
+            ),
             _ => {
-                wprintln!("[ERR] {:#} from lmaccess::NetUserDel: unknown to this program", res);
+                wprintln!(
+                    "[ERR] {:#} from lmaccess::NetUserDel: unknown to this program",
+                    res
+                );
             }
         };
         //std::mem::forget(res);
@@ -318,7 +333,7 @@ pub fn del_user(user: &String) -> Result<bool, ()> {
 fn check_user_is_admin(users: &Vec<UserInfo1Native>, user: &str) -> Result<bool, ()> {
     for u_info in users {
         if &u_info.usri1_name == user {
-            match &u_info.usri1_priv{
+            match &u_info.usri1_priv {
                 Usr1Privs::Administrator => return Ok(true),
                 _ => return Ok(false),
             }
@@ -331,38 +346,45 @@ fn check_user_is_admin(users: &Vec<UserInfo1Native>, user: &str) -> Result<bool,
 fn test_check_user_exists() {
     // Guest should always exist
     let user = "Guest".to_string();
-    assert_eq!(check_user_exists(&user), true);
+    assert!(check_user_exists(&user));
+    // bad_jmh almost certainly will not exist on your system
     let bad_user = "bad_jmh".to_string();
-    assert_eq!(check_user_exists(&bad_user), false);
+    assert!(!check_user_exists(&bad_user));
 }
 
 #[test]
 fn test_check_local_user_count() {
+    // For my machine, 4 users is the right number
+    //   * Administrator
+    //   * Guest
+    //   * WDAGUtilityAccount (used for Windows Defender)
+    //   * DefaultAccount
+    // Note: My computer uses AzureAD/Entra to log in, which does not seem to be represented here.
     assert_eq!(how_many_local_users().unwrap(), 4);
 }
-
 
 #[test]
 fn test_admin_group_checker() {
     let users = get_local_users();
+    // The default Administrator user almost certainly exists, even if it's not able to log-in.
     assert!(check_user_is_admin(&users, "Administrator").unwrap());
+    // Guest is not an Admin on any windows system that is sane
     assert!(!check_user_is_admin(&users, "Guest").unwrap());
 }
 
 #[test]
 fn test_user_in_admin_group_yes() {
+    // FIXME: We should try to ascertain the user of the executor, they have to be admins!
     let user = "jmh".to_string();
     let password = "JanHarasym123!!@@".to_string();
     assert!(add_user(&user, &password).unwrap());
-    //assert_eq!(add_user_to_admins(&user), true);
-    assert!(
-        check_user_exists(&user)
-    );
+    assert!(add_to_admin_group(&user).unwrap());
+    assert!(check_user_exists(&user));
     let users = get_local_users();
     assert!(check_user_is_admin(&users, &user).unwrap());
-    match del_user(&user){
+    match del_user(&user) {
         Ok(true) => wprintln!("Successfully deleted {:?}", &user),
-        _ => wprintln!("Did not successfully delete: {:?}", &user)
+        _ => wprintln!("Did not successfully delete: {:?}", &user),
     };
 }
 
@@ -372,16 +394,17 @@ fn test_many_users() {
     for i in 0..100 {
         let user = format!("sth_jmh_{}", i).to_string();
         let password = "JanHarasym123!!@@".to_string();
-        let before = how_many_local_users().unwrap();
+        //let before = how_many_local_users().unwrap();
         assert!(add_user(&user, &password).unwrap());
-        assert_eq!(before + 1, how_many_local_users().unwrap());
-    };
+        //assert_eq!(before + 1, how_many_local_users().unwrap());
+    }
     wprintln!("New number of users is {}", how_many_local_users().unwrap());
-    assert_eq!(number_of_users+100, how_many_local_users().unwrap());
+    assert_eq!(number_of_users + 100, how_many_local_users().unwrap());
+
     for i in 0..100 {
         let user = format!("sth_jmh_{}", i).to_string();
         assert!(del_user(&user).unwrap());
-    };
+    }
     let new_number_of_users = how_many_local_users().unwrap();
-    assert_eq!(new_number_of_users == number_of_users, true);
+    assert_eq!(new_number_of_users, number_of_users);
 }
