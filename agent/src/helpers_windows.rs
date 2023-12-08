@@ -61,7 +61,7 @@ struct UserInfo1Native {
     #[allow(dead_code)]
     usri1_password_age: u32,
     #[allow(dead_code)]
-    usri1_priv: u32,
+    usri1_priv: Usr1Privs,
     #[allow(dead_code)]
     usri1_home_dir: String,
     #[allow(dead_code)]
@@ -70,6 +70,13 @@ struct UserInfo1Native {
     usri1_flags: u32,
     #[allow(dead_code)]
     usri1_script_path: String,
+}
+
+#[derive(Debug)]
+enum Usr1Privs {
+    Guest,
+    Standard,
+    Administrator,
 }
 
 pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> {
@@ -207,10 +214,17 @@ fn get_local_users() -> Vec<UserInfo1Native> {
                 let user_script_wc: WideCString =
                     unsafe { WideCString::from_ptr_str(info.usri1_script_path) };
 
+                let privs = match info.usri1_priv {
+                    0 => Usr1Privs::Guest,
+                    1 => Usr1Privs::Standard,
+                    2 => Usr1Privs::Administrator,
+                    _ => panic!()
+                };
+
                 UserInfo1Native {
                     usri1_name: user_name_wc.to_string_lossy(),
                     usri1_password_age: info.usri1_password_age,
-                    usri1_priv: info.usri1_priv,
+                    usri1_priv: privs,
                     usri1_home_dir: user_homedir_wc.to_string_lossy(),
                     usri1_comment: user_comment_wc.to_string_lossy(),
                     usri1_flags: info.usri1_flags,
@@ -301,6 +315,18 @@ pub fn del_user(user: &String) -> Result<bool, ()> {
     Ok(true)
 }
 
+fn check_user_is_admin(users: &Vec<UserInfo1Native>, user: &str) -> Result<bool, ()> {
+    for u_info in users {
+        if &u_info.usri1_name == user {
+            match &u_info.usri1_priv{
+                Usr1Privs::Administrator => return Ok(true),
+                _ => return Ok(false),
+            }
+        }
+    }
+    Err(())
+}
+
 #[test]
 fn test_check_user_exists() {
     // Guest should always exist
@@ -315,6 +341,14 @@ fn test_check_local_user_count() {
     assert_eq!(how_many_local_users().unwrap(), 4);
 }
 
+
+#[test]
+fn test_admin_group_checker() {
+    let users = get_local_users();
+    assert!(check_user_is_admin(&users, "Administrator").unwrap());
+    assert!(!check_user_is_admin(&users, "Guest").unwrap());
+}
+
 #[test]
 fn test_user_in_admin_group_yes() {
     let user = "jmh".to_string();
@@ -324,7 +358,8 @@ fn test_user_in_admin_group_yes() {
     assert!(
         check_user_exists(&user)
     );
-    //assert_eq!(check_user_is_admin(&user), true);
+    let users = get_local_users();
+    assert!(check_user_is_admin(&users, &user).unwrap());
     match del_user(&user){
         Ok(true) => wprintln!("Successfully deleted {:?}", &user),
         _ => wprintln!("Did not successfully delete: {:?}", &user)
