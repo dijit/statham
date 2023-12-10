@@ -1,0 +1,8 @@
+#[source.crates-io]
+#replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "../cargo/vendor"
+
+[target.'cfg(all(windows, target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]
