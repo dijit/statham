@@ -1,4 +1,4 @@
-﻿use log::warn;
+use log::warn;
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 #[allow(unused_imports)]
@@ -36,10 +36,10 @@ macro_rules! wprintln {
     ($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\r\n"), $($arg)*));
 }
 
-fn to_wchar<'a>(string: &str) -> Vec<u16> {
+fn to_wchar(string: &str) -> Vec<u16> {
     OsStr::new(string)
         .encode_wide()
-        .chain(Some(0).into_iter())
+        .chain(Some(0))
         .collect()
 }
 
@@ -49,6 +49,8 @@ fn to_dword<'a>(word: u32) -> u32 {
 
 const ADMIN_GROUP: &str = "Administrators";
 
+// FIXME: Unused?
+#[allow(dead_code)]
 #[derive(Debug)]
 struct UserInfo0Native {
     #[allow(dead_code)]
@@ -83,6 +85,7 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
     let mut _username: Vec<u16> = to_wchar(&user);
     let mut _password: Vec<u16> = to_wchar(&password);
     let mut _comment: Vec<u16> = to_wchar("Added By Statham");
+    let mut _empty_string: Vec<u16> = to_wchar("");
     let _ptr_hostname: *mut u16 = ptr::null_mut();
     let _ptr_error: *mut u32 = ptr::null_mut();
     // Info: https://docs.microsoft.com/en-us/windows/win32/api/lmaccess/ns-lmaccess-user_info_1
@@ -91,10 +94,10 @@ pub fn add_user<'a>(user: &'a String, password: &'a String) -> Result<bool, ()> 
         usri1_password: _password.as_mut_ptr(),
         usri1_password_age: to_dword(0),
         usri1_priv: to_dword(1),
-        usri1_home_dir: to_wchar(&"").as_mut_ptr(),
+        usri1_home_dir: _empty_string.as_mut_ptr(),
         usri1_comment: _comment.as_mut_ptr(),
         usri1_flags: to_dword(0),
-        usri1_script_path: to_wchar(&"").as_mut_ptr(),
+        usri1_script_path: _empty_string.as_mut_ptr(),
     };
     let user_info_ptr = &mut user_info as *mut _ as _;
     let res = unsafe { NetUserAdd(_ptr_hostname, 1, user_info_ptr, _ptr_error) };
@@ -136,22 +139,16 @@ pub fn add_to_admin_group(user: &String) -> Result<bool, bool> {
     let _servername: LPCWSTR = ptr::null_mut(); //in
                                                 // [DWORD] Information level of the group (and which user struct to use)
     let mut _username = to_wchar(user);
-    let _groupname: LPCWSTR = to_wchar(ADMIN_GROUP).as_mut_ptr();
+    // Scoping issue here if I don't create an intermediate variable
+    let mut _groupname_wchar: Vec<u16> = to_wchar(ADMIN_GROUP);
+    let _groupname: LPCWSTR = _groupname_wchar.as_mut_ptr();
     // https://docs.microsoft.com/en-us/windows/win32/api/lmaccess/ns-lmaccess-localgroup_members_info_3
     let mut local_user_buf = LOCALGROUP_MEMBERS_INFO_3 {
         // Docs say this should be `&lt;DomainName&gt;\&lt;AccountName&gt;` but it looks wrong to me
         lgrmi3_domainandname: _username.as_mut_ptr(),
     };
     let user_info_ptr = &mut local_user_buf as *mut _ as _;
-    let res = unsafe {
-        NetLocalGroupAddMembers(
-            _servername,
-            to_wchar(&ADMIN_GROUP).as_mut_ptr(),
-            3,
-            user_info_ptr,
-            1,
-        )
-    };
+    let res = unsafe { NetLocalGroupAddMembers(_servername, _groupname, 3, user_info_ptr, 1) };
 
     match res {
         2220 => {
@@ -164,7 +161,7 @@ pub fn add_to_admin_group(user: &String) -> Result<bool, bool> {
         0 => Ok(true),
         _ => {
             wprintln!(
-                "[ERR] lmaccess::NetLocalGroupAddMembers CODE {:?}: Unknown to this program",
+                "[ERR] lmaccess::NetLocalGroupAddMembers CODE {}: Unknown to this program",
                 res
             );
             Err(false)
@@ -280,7 +277,7 @@ pub fn how_many_local_users() -> Result<usize, ()> {
             &mut total_entries,
             resume_handle,
         );
-        warn!("function_return: {:?}", net_user_enum_ret);
+        warn!("function_return: {}", net_user_enum_ret);
     };
 
     scopeguard::defer! {
@@ -309,23 +306,24 @@ pub fn how_many_local_users() -> Result<usize, ()> {
 pub fn del_user(user: &String) -> Result<bool, ()> {
     let _ptr_hostname: *mut u16 = ptr::null_mut();
     let mut _username: Vec<u16> = to_wchar(&user);
-    unsafe {
-        let res = NetUserDel(_ptr_hostname, _username.as_mut_ptr());
-        match res {
-            0 => {}
-            2221 => wprintln!(
-                "[ERR] 2221 lmaccess::NetUserDel: User {} could not be found",
-                user
-            ),
-            _ => {
-                wprintln!(
-                    "[ERR] {:#} from lmaccess::NetUserDel: unknown to this program",
-                    res
+    let res: u32 = unsafe {
+        NetUserDel(_ptr_hostname, _username.as_mut_ptr())
+    };
+    match res {
+        0 => {}
+        2221 => wprintln!(
+            "[ERR] 2221 lmaccess::NetUserDel: User {} could not be found",
+            &user
+        ),
+        _ => {
+            wprintln!(
+                    "[ERR] {:#} from lmaccess::NetUserDel: unknown to this program - user: {} possibly not removed",
+                    &res,
+                    &user
                 );
-            }
-        };
-        //std::mem::forget(res);
-    }
+        }
+    };
+    //std::mem::forget(res);
     wprintln!("Deleted user {}", &user);
     Ok(true)
 }
@@ -368,7 +366,7 @@ fn test_admin_group_checker() {
     let users = get_local_users();
     // The default Administrator user almost certainly exists, even if it's not able to log-in.
     assert!(check_user_is_admin(&users, "Administrator").unwrap());
-    // Guest is not an Admin on any windows system that is sane
+    // Guest is not an Admin on any Windows system that is sane
     assert!(!check_user_is_admin(&users, "Guest").unwrap());
 }
 
@@ -383,28 +381,40 @@ fn test_user_in_admin_group_yes() {
     let users = get_local_users();
     assert!(check_user_is_admin(&users, &user).unwrap());
     match del_user(&user) {
-        Ok(true) => wprintln!("Successfully deleted {:?}", &user),
-        _ => wprintln!("Did not successfully delete: {:?}", &user),
+        Ok(true) => wprintln!("Successfully deleted {}", &user),
+        _ => wprintln!("Did not successfully delete: {}", &user),
     };
 }
 
 #[test]
 fn test_many_users() {
     let number_of_users = how_many_local_users().unwrap();
-    for i in 0..100 {
+    let number_of_creatable_users: u8 = 100;
+
+    for i in 0u8..number_of_creatable_users {
         let user = format!("sth_jmh_{}", i).to_string();
+        wprintln!("Adding user {}", &user);
         let password = "JanHarasym123!!@@".to_string();
         //let before = how_many_local_users().unwrap();
         assert!(add_user(&user, &password).unwrap());
         //assert_eq!(before + 1, how_many_local_users().unwrap());
     }
     wprintln!("New number of users is {}", how_many_local_users().unwrap());
-    assert_eq!(number_of_users + 100, how_many_local_users().unwrap());
+    {
+        let expected_new_users = number_of_creatable_users as usize + number_of_users;
+        let actual_new_users = how_many_local_users().unwrap();
+        assert_eq!(expected_new_users, actual_new_users, "Missing users; expected: {}", expected_new_users);
+    }
 
-    for i in 0..100 {
+    //assert_ne!(how_many_local_users().unwrap() < 100usize, "Not enough local users");
+    for i in 0u8..number_of_creatable_users {
         let user = format!("sth_jmh_{}", i).to_string();
-        assert!(del_user(&user).unwrap());
+        //wprintln!("Deleting user {}", &user);
+        assert!(
+            del_user(&user).unwrap()
+        );
+        assert!(check_user_exists(&user) == false, "User {} still exists after deletion", &user)
     }
     let new_number_of_users = how_many_local_users().unwrap();
-    assert_eq!(new_number_of_users, number_of_users);
+    assert_eq!(new_number_of_users, number_of_users, "Cleanup Failed; expected users: {}, actual users: {}", number_of_users, new_number_of_users);
 }

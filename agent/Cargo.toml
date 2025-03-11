@@ -15,8 +15,8 @@ name = "agent"
 path = "src/main.rs"
 
 [dependencies]
-log = "=0.4.20"
-fern = "=0.6.2"
+log = "=0.4.26"
+fern = "=0.7.1"
 scopeguard = "1.2.0"
 
 [target.'cfg(windows)'.dependencies.winapi]
@@ -25,6 +25,9 @@ features = ["winuser", "lmaccess", "lmapibuf", "minwindef", "winerror", "errhand
 
 [target.'cfg(windows)'.dependencies.widestring]
 version = "1.0.2"
+
+[target.'cfg(windows)'.dependencies.ntapi]
+version = ">=0.4.1"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.12"
