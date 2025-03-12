@@ -37,10 +37,7 @@ macro_rules! wprintln {
 }
 
 fn to_wchar(string: &str) -> Vec<u16> {
-    OsStr::new(string)
-        .encode_wide()
-        .chain(Some(0))
-        .collect()
+    OsStr::new(string).encode_wide().chain(Some(0)).collect()
 }
 
 fn to_dword<'a>(word: u32) -> u32 {
@@ -306,9 +303,7 @@ pub fn how_many_local_users() -> Result<usize, ()> {
 pub fn del_user(user: &String) -> Result<bool, ()> {
     let _ptr_hostname: *mut u16 = ptr::null_mut();
     let mut _username: Vec<u16> = to_wchar(&user);
-    let res: u32 = unsafe {
-        NetUserDel(_ptr_hostname, _username.as_mut_ptr())
-    };
+    let res: u32 = unsafe { NetUserDel(_ptr_hostname, _username.as_mut_ptr()) };
     match res {
         0 => {}
         2221 => wprintln!(
@@ -403,18 +398,28 @@ fn test_many_users() {
     {
         let expected_new_users = number_of_creatable_users as usize + number_of_users;
         let actual_new_users = how_many_local_users().unwrap();
-        assert_eq!(expected_new_users, actual_new_users, "Missing users; expected: {}", expected_new_users);
+        assert_eq!(
+            expected_new_users, actual_new_users,
+            "Missing users; expected: {}",
+            expected_new_users
+        );
     }
 
     //assert_ne!(how_many_local_users().unwrap() < 100usize, "Not enough local users");
     for i in 0u8..number_of_creatable_users {
         let user = format!("sth_jmh_{}", i).to_string();
         //wprintln!("Deleting user {}", &user);
+        assert!(del_user(&user).unwrap());
         assert!(
-            del_user(&user).unwrap()
-        );
-        assert!(check_user_exists(&user) == false, "User {} still exists after deletion", &user)
+            check_user_exists(&user) == false,
+            "User {} still exists after deletion",
+            &user
+        )
     }
     let new_number_of_users = how_many_local_users().unwrap();
-    assert_eq!(new_number_of_users, number_of_users, "Cleanup Failed; expected users: {}, actual users: {}", number_of_users, new_number_of_users);
+    assert_eq!(
+        new_number_of_users, number_of_users,
+        "Cleanup Failed; expected users: {}, actual users: {}",
+        number_of_users, new_number_of_users
+    );
 }

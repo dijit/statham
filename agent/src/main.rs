@@ -1,7 +1,7 @@
 #![windows_subsystem = "windows"]
-use std::io::Error;
-use log::warn;
 use crate::password_generator::{generate_password, Case, List};
+use log::warn;
+use std::io::Error;
 
 #[cfg(target_os = "linux")]
 #[path = "helpers_linux.rs"]
@@ -44,14 +44,16 @@ fn print_message(msg: &str) -> Result<i32, Error> {
 }
 
 fn main() {
+    /*
     let out = format!(
         "local user count: {}",
         helpers::how_many_local_users().expect("Failure to call")
     );
     print_message(&out).expect("Failed to write");
+     */
 
     let username = "sth_Admin".to_string();
-    let password = generate_password(List::Long, Case::Mixed, 4, "-".to_string());
+    let password = generate_password(List::Short2, Case::Mixed, 4, "-".to_string());
     println!("Password generated is: {}", &password);
     /*
     match helpers::check_user_exists(&username) {

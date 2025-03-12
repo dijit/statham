@@ -27,6 +27,7 @@ features = ["winuser", "lmaccess", "lmapibuf", "minwindef", "winerror", "errhand
 [target.'cfg(windows)'.dependencies.widestring]
 version = "1.0.2"
 
+### Update Version of Dependencies for build errors
 [target.'cfg(windows)'.dependencies.ntapi]
 version = ">=0.4.1"
 

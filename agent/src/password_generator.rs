@@ -121,7 +121,7 @@ impl ExtraCases for str {
     /// Uses [`ThreadRng`](https://docs.rs/rand/latest/rand/rngs/struct.ThreadRng.html)
     /// from the [`rand`](https://docs.rs/rand/latest/rand/) crate.
     fn to_random_case<T: Rng>(&self, rng: &mut T) -> String {
-        if rng.gen_range(0..=1) == 0 {
+        if rng.random_range(0..=1) == 0 {
             self.to_lowercase()
         } else {
             self.to_uppercase()
