@@ -1,5 +1,7 @@
+#[cfg(target_os = "windows")]
 extern crate winres;
 
+#[cfg(target_os = "windows")]
 fn main() {
     if cfg!(target_os = "windows") {
         let mut res = winres::WindowsResource::new();
@@ -10,3 +12,6 @@ fn main() {
         res.compile().unwrap();
     }
 }
+
+#[cfg(not(target_os = "windows"))]
+fn main() {}

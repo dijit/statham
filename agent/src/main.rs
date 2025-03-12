@@ -1,8 +1,13 @@
 #![windows_subsystem = "windows"]
 use std::io::Error;
+use log::warn;
+use crate::password_generator::{generate_password, Case, List};
 
 #[cfg(target_os = "linux")]
 #[path = "helpers_linux.rs"]
+mod helpers;
+#[cfg(target_os = "macos")]
+#[path = "helpers_macos.rs"]
 mod helpers;
 
 #[cfg(target_os = "windows")]
@@ -11,6 +16,7 @@ extern crate winapi;
 #[cfg(target_os = "windows")]
 #[path = "helpers_windows.rs"]
 mod helpers;
+mod password_generator;
 
 #[cfg(target_os = "windows")]
 fn print_message(msg: &str) -> Result<i32, Error> {
@@ -31,6 +37,11 @@ fn print_message(msg: &str) -> Result<i32, Error> {
         Ok(ret)
     }
 }
+#[cfg(not(target_os = "windows"))]
+fn print_message(msg: &str) -> Result<i32, Error> {
+    println!("{}", msg);
+    Ok(0)
+}
 
 fn main() {
     let out = format!(
@@ -40,7 +51,9 @@ fn main() {
     print_message(&out).expect("Failed to write");
 
     let username = "sth_Admin".to_string();
-    let password = "!Password1234*****".to_string();
+    let password = generate_password(List::Long, Case::Mixed, 4, "-".to_string());
+    println!("Password generated is: {}", &password);
+    /*
     match helpers::check_user_exists(&username) {
         true => println!("Discovered that the user exists"),
         false => println!("Did not find that user"),
@@ -51,11 +64,12 @@ fn main() {
             print_message(&msg).expect(&msg);
             helpers::add_user(&username, &password).unwrap();
             helpers::add_to_admin_group(&username).unwrap();
-        }
+        },
         true => {
             let msg = format!("User {} exists, deleting now", &username);
             print_message(&msg).expect(&msg);
             helpers::del_user(&username).expect("Unable to delete user");
         }
     }
+     */
 }

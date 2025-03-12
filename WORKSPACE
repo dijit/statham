@@ -16,8 +16,8 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 #rust_repositories()
 #rust_repositories(version = "nightly", iso_date = "2021-10-05", edition = "2018")
-rust_repositories(version = "1.56.1", edition = "2021")
+rust_repositories(version = "1.77.2", edition = "2021")
 
 #load("//cargo:crates.bzl", "raze_fetch_remote_crates")
-#
+
 #raze_fetch_remote_crates()

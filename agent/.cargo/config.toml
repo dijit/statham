@@ -6,3 +6,11 @@ directory = "../cargo/vendor"
 
 [target.'cfg(all(windows, target_env = "msvc"))']
 rustflags = ["-C", "target-feature=+crt-static"]
+
+# [target.'cfg(all(windows, target_env = "gnu"))']
+# rustflags = ["-C", "target-feature=+crt-static"]
+
+# cp -f /usr/local/Cellar/mingw-w64/7.0.0_1/toolchain-x86_64/x86_64-w64-mingw32/lib/{,dll}crt2.o `rustc --print sysroot`/lib/rustlib/x86_64-pc-windows-gnu/lib
+# cargo build --target=x86_64-pc-windows-gnu --verbose
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"

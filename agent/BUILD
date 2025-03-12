@@ -8,8 +8,12 @@ rust_binary(
     deps = [
         "//cargo:fern",
         "//cargo:log",
-        "//cargo:widestring",
-        "//cargo:winapi",
-        "//cargo:winres",
-    ],
+    ] + 
+    select({ "@platforms//os:windows": 
+	   [ "//cargo:widestring",
+             "//cargo:winapi",
+             "//cargo:winres",
+           ],
+           "//conditions:default": []}
+    ),
 )
