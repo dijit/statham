@@ -2,7 +2,7 @@
 
 Statham is a password creator and transporter.
 
-⚠️ This project is currently only used for testing BAZEL; expect only Hello worlds and simple tests ⚠️
+⚠️ This project in its current form has only the Agent Code for Windows; it is under heavy development when I find time ⚠️
 
 It is designed for Windows systems primarily because we don't like AD.
 

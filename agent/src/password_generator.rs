@@ -4,26 +4,8 @@ use rand::{
 };
 use std::vec::IntoIter;
 
-#[derive(Debug)]
-pub struct Args {
-    /// Number of words to include in the password
-    //#[clap(short, long, value_parser, default_value_t = 6)]
-    pub number: usize,
-
-    /// A separator to use between words
-    //#[clap(short, long, value_parser, default_value_t = String::from(" "))]
-    pub separator: String,
-
-    /// List of words to use for random password generation
-    //#[clap(short, long, arg_enum, value_parser, default_value_t = List::Long)]
-    pub list: List,
-
-    /// Case to use on the words
-    //#[clap(short, long, arg_enum, value_parser, default_value_t = Case::Lower)]
-    pub case: Case,
-}
-
 /// List of words to use for password generation.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum List {
     /// [EFF's long word list](https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt)
@@ -168,12 +150,12 @@ mod tests {
 
         let actual: Vec<&str> = get_random_words(word_list, &mut rng, 6).collect();
         let expected = vec![
-            "tamale",
-            "manlike",
-            "unguided",
-            "atlas",
-            "egomaniac",
-            "vaporizer",
+            "brussels",
+            "army",
+            "retrieval",
+            "surplus",
+            "barista",
+            "grader",
         ];
 
         assert_eq!(actual, expected);
@@ -183,7 +165,7 @@ mod tests {
         change_word_case(
             case,
             vec!["foo", "bar", "buzz"].into_iter(),
-            &mut rand::thread_rng(),
+            &mut rand::rng(),
         )
     }
 

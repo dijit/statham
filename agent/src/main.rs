@@ -1,6 +1,5 @@
 #![windows_subsystem = "windows"]
 use crate::password_generator::{generate_password, Case, List};
-use log::warn;
 use std::io::Error;
 
 #[cfg(target_os = "linux")]
