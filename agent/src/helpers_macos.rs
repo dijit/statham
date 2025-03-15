@@ -71,7 +71,7 @@ mod tests {
     #[test]
     fn check_users() {
         assert_eq!(list_users().unwrap(),
-            vec!["dijit".to_string(), "root".to_string()]
+            vec![std::env::var("USER").unwrap(), "root".to_string()]
         )
     }
     #[test]

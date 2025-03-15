@@ -368,7 +368,7 @@ fn test_admin_group_checker() {
 #[test]
 fn test_user_in_admin_group_yes() {
     // FIXME: We should try to ascertain the user of the executor, they have to be admins!
-    let user = "jmh".to_string();
+    let user = std::env::var("USERNAME").unwrap();
     let password = "JanHarasym123!!@@".to_string();
     assert!(add_user(&user, &password).unwrap());
     assert!(add_to_admin_group(&user).unwrap());
