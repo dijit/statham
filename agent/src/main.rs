@@ -43,17 +43,15 @@ fn print_message(msg: &str) -> Result<i32, Error> {
 }
 
 fn main() {
-    /*
     let out = format!(
         "local user count: {}",
         helpers::how_many_local_users().expect("Failure to call")
     );
     print_message(&out).expect("Failed to write");
-     */
 
     let username = "sth_Admin".to_string();
     let password = generate_password(List::Short2, Case::Mixed, 4, "-".to_string());
-    println!("Password generated is: {}", &password);
+    print_message(format!("Password generated is: {}", &password).as_ref());
     /*
     match helpers::check_user_exists(&username) {
         true => println!("Discovered that the user exists"),
@@ -73,4 +71,37 @@ fn main() {
         }
     }
      */
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::helpers::*;
+    #[test]
+    fn check_users() {
+        assert_eq!(list_users().unwrap(),
+                   vec![std::env::var("USER").unwrap(), "root".to_string()]
+        )
+    }
+    #[test]
+    fn test_how_many_local_users() {
+        assert_eq!(
+            how_many_local_users().unwrap(),
+            2
+        )
+    }
+    #[test]
+    fn test_check_user_exists_which_does_exist() {
+        assert_eq!(
+            check_user_exists(&"root".to_string()),
+            true
+        )
+    }
+    #[test]
+    fn test_check_user_exists_which_does_not_exist() {
+        assert_eq!(
+            check_user_exists(&"averynaughtyperson".to_string()),
+            false
+        )
+    }
 }
