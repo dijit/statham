@@ -24,7 +24,7 @@ pub fn del_user(user: &String) -> Result<bool, ()> {
     unimplemented!()
 }
 
-fn list_users() -> Result<Vec<String>, ()> {
+pub fn list_users() -> Result<Vec<String>, ()> {
     // Only list admin users, this is the only way I could do it.
     // It's *almost* worse than the Windows way.
     use std::process::Command;
@@ -39,7 +39,7 @@ fn list_users() -> Result<Vec<String>, ()> {
 
     if !output.status.success() {
         eprintln!("Error: Failed to list users");
-        return Err(())
+        return Err(());
     }
 
     let users = String::from_utf8_lossy(&output.stdout);
@@ -70,28 +70,21 @@ mod tests {
     use super::*;
     #[test]
     fn check_users() {
-        assert_eq!(list_users().unwrap(),
+        assert_eq!(
+            list_users().unwrap(),
             vec![std::env::var("USER").unwrap(), "root".to_string()]
         )
     }
     #[test]
     fn test_how_many_local_users() {
-        assert_eq!(
-            how_many_local_users().unwrap(),
-            2
-        )
+        assert_eq!(how_many_local_users().unwrap(), 2)
     }
     #[test]
     fn test_check_user_exists_which_does_exist() {
-        assert_eq!(
-            check_user_exists(&"root".to_string()),
-            true
-        )
+        assert_eq!(check_user_exists(&"root".to_string()), true)
     }
     #[test]
     fn test_check_user_exists_which_does_not_exist() {
-        assert_eq!(
-            check_user_exists(&"averynaughtyperson".to_string()),
-            false
-        )
-    }}
+        assert_eq!(check_user_exists(&"averynaughtyperson".to_string()), false)
+    }
+}
