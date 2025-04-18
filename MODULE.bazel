@@ -1,0 +1,41 @@
+module(
+    name = "statham",
+    version = "0.1.1",
+)
+
+bazel_dep(name = "rules_rust", version = "0.60.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(
+    rust,
+    "rust_toolchains",
+)
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension(
+    "@rules_rust//crate_universe:extensions.bzl",
+    "crate",
+)
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//agent:Cargo.lock",
+    manifests = ["//agent:Cargo.toml"],
+)
+use_repo(crate, "crates")
+
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+crate_index_cargo_local = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_cargo_local.from_cargo(
+    name = "crate_index_cargo_local",
+    cargo_lockfile = "//agent:Cargo.lock",
+    manifests = ["//agent:Cargo.toml"],
+)
+use_repo(
+    crate_index_cargo_local,
+    "crate_index_cargo_local",
+)
