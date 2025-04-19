@@ -17,6 +17,7 @@ pub enum List {
 }
 
 /// Case to use on the words.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum Case {
     Upper,
@@ -40,9 +41,7 @@ pub fn generate_password(list: List, case: Case, number: usize, separator: Strin
     // to get random ordering of the words
     random_words.shuffle(&mut rng);
 
-    let xkcd_password = random_words.join(&separator);
-
-    xkcd_password
+    random_words.join(&separator)
 }
 
 /// Return the contents of the word list.

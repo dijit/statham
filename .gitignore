@@ -5,3 +5,4 @@ bazel-out
 bazel-statham
 bazel-testlogs
 cargo/vendor
+.clwb

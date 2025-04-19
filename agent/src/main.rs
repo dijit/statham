@@ -51,7 +51,7 @@ fn main() {
 
     let username = "sth_Admin".to_string();
     let password = generate_password(List::Short2, Case::Mixed, 4, "-".to_string());
-    print_message(format!("Password generated is: {}", &password).as_ref());
+    print_message(format!("Password generated is: {}", &password).as_ref()).unwrap();
     /*
     match helpers::check_user_exists(&username) {
         true => println!("Discovered that the user exists"),

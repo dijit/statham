@@ -1,6 +1,6 @@
 const ADMIN_GROUP: &str = "wheel";
 
-pub fn add_user(user: &String, password: &str) -> Result<bool, ()> {
+pub fn add_user(user: &str, password: &str) -> Result<bool, ()> {
     unimplemented!()
 }
 
@@ -20,7 +20,7 @@ pub fn check_user_exists(user: &String) -> bool {
 pub fn how_many_local_users() -> Result<i32, ()> {
     Ok(list_users()?.len() as i32)
 }
-pub fn del_user(user: &String) -> Result<bool, ()> {
+pub fn del_user(user: &str) -> Result<bool, ()> {
     unimplemented!()
 }
 

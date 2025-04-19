@@ -1,7 +1,7 @@
 #load("@rules_rust//rust:defs.bzl", "rust_binary")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@crate_index_cargo_local//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -22,8 +22,8 @@ rust_binary(
     #    "//crate:log",
     #] +
     #select({ "@platforms//os:windows":
-	#   [
-	#        "//crate:widestring",
+    #   [
+    #        "//crate:widestring",
     #        "//crate:scopeguard",
     #        "//crate:winapi",
     #        "//crate:winres",
@@ -31,6 +31,16 @@ rust_binary(
     #       "//conditions:default": []}
     #),
 )
+
+"""
+rust_clippy(
+    name = "agent_clippy",
+    testonly = True,
+    deps = [
+        ":agent",
+    ],
+)
+"""
 
 rust_test(
     name = "agent_test",

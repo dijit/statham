@@ -29,31 +29,37 @@ use_repo(
     crate_server,
     "crate_server",
 )
+
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 bazel_dep(name = "rules_oci", version = "2.2.5")
+
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
     name = "docker_lib_debian",
+    #tag = "bookworm-slim",
+    digest = "sha256:b1211f6d19afd012477bd34fdcabb6b663d680e0f4b0537da6e6b0fd057a3ec3",
     image = "docker.io/library/debian",
     platforms = [
         "linux/arm64/v8",
         "linux/amd64",
     ],
-    tag = "bookworm-slim",
 )
 oci.pull(
     name = "distroless_base",
     # 'latest' is not reproducible, but it's convenient.
     # During the build we print a WARNING message that includes recommended 'digest' and 'platforms'
     # values which you can use here in place of 'tag' to pin for reproducibility.
-    tag = "latest",
+    #tag = "latest",
+    digest = "sha256:27769871031f67460f1545a52dfacead6d18a9f197db77110cfc649ca2a91f44",
     image = "gcr.io/distroless/base",
-    platforms = ["linux/amd64"],
+    platforms = [
+        "linux/arm64/v8",
+        "linux/amd64",
+    ],
 )
 
 # For each oci.pull call, repeat the "name" here to expose them as dependencies.
-use_repo(oci, "docker_lib_debian")
-use_repo(oci, "distroless_base")
+use_repo(oci, "distroless_base", "distroless_base_linux_amd64", "distroless_base_linux_arm64_v8", "docker_lib_debian", "docker_lib_debian_linux_amd64", "docker_lib_debian_linux_arm64_v8")
 
 # https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
 crate_index_cargo_local = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
