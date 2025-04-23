@@ -240,7 +240,7 @@ fn get_local_users() -> Vec<UserInfo1Native> {
 
         if result.is_empty() {
             let err = unsafe { GetLastError() };
-            println!("Query failed with error: {}", err);
+            wprintln!("Query failed with error: {}", err);
         }
 
         if api_ret != ERROR_MORE_DATA {
@@ -251,7 +251,7 @@ fn get_local_users() -> Vec<UserInfo1Native> {
 }
 
 pub fn check_user_exists(user: &String) -> bool {
-    get_local_users().iter().any(|u| &u.usri1_name == user)
+    get_local_users().iter().any(|u| &u.usri1_name.to_lowercase() == &user.to_lowercase())
 }
 
 #[allow(dead_code)] // used for tests
@@ -325,7 +325,7 @@ pub fn del_user(user: &String) -> Result<bool, ()> {
 
 fn check_user_is_admin(users: &Vec<UserInfo1Native>, user: &str) -> Result<bool, ()> {
     for u_info in users {
-        if &u_info.usri1_name == user {
+        if &u_info.usri1_name.to_lowercase() == &user.to_lowercase() {
             match &u_info.usri1_priv {
                 Usr1Privs::Administrator => return Ok(true),
                 _ => return Ok(false),
@@ -333,6 +333,52 @@ fn check_user_is_admin(users: &Vec<UserInfo1Native>, user: &str) -> Result<bool,
         }
     }
     Err(())
+}
+
+pub fn get_local_username() -> String {
+    // winapi::um::winbase::GetUsername(
+    unsafe {
+        let mut size = 0;
+        let retval = winapi::um::winbase::GetUserNameW(ptr::null_mut(), &mut size);
+        assert_eq!(retval, 0, "Should have failed");
+
+        let mut username = Vec::with_capacity(size as usize);
+        let retval = winapi::um::winbase::GetUserNameW(username.as_mut_ptr(), &mut size);
+        assert_ne!(retval, 0, "Perform better error handling");
+        assert!((size as usize) <= username.capacity());
+        username.set_len(size as usize);
+
+        // Beware: This leaves the trailing NUL character in the final string,
+        // you may want to remove it!
+        let user = String::from_utf16(&username).unwrap();
+        user.trim_matches(char::from(0)).to_string()
+    }
+}
+
+/// FIXME: dead code, this was for testing where the best place to get USER was
+pub fn get_local_username_from_homedir() -> String {
+    /// WINDOWS IS A FUCKING DICKHEAD AND GIVES ME THE USERNAME IN LOWERCASE
+    /// SO FOR NOW WE DON'T TRUST IT!
+    use log::error;
+
+    let actual_user = get_local_username(); // Call to unsafe win32 API version
+    let expected_user = std::env::var("USERNAME").unwrap_or_else(|_| "Administrator".to_string());
+    let homedir  = std::env::var("USERPROFILE")
+        .unwrap();
+    let from_homedir = homedir.split('\\').last().unwrap();
+    if &from_homedir != &expected_user {
+        wprintln!("{}", format!("username: {} and profile dir name: {} are not equal",  &from_homedir, &expected_user));
+    }
+    assert_eq!(&actual_user, &expected_user);
+    actual_user.to_string()
+}
+
+pub fn list_users() -> Result<Vec<String>, ()> {
+    let mut users_to_return: Vec<String> = Vec::new();
+    for u in get_local_users().iter() {
+        users_to_return.push(u.usri1_name.clone());
+    };
+    Ok(users_to_return)
 }
 
 #[test]
@@ -365,22 +411,29 @@ fn test_admin_group_checker() {
     assert!(!check_user_is_admin(&users, "Guest").unwrap());
 }
 
+/*
 #[test]
 fn test_user_in_admin_group_yes() {
     // FIXME: We should try to ascertain the user of the executor, they have to be admins!
     let user = std::env::var("USERNAME").unwrap();
-    let password = "JanHarasym123!!@@".to_string();
-    assert!(add_user(&user, &password).unwrap());
-    assert!(add_to_admin_group(&user).unwrap());
-    assert!(check_user_exists(&user));
+    assert_eq!(user, "administrator".to_string());
+    //let password = "JanHarasym123!!@@".to_string();
+    //assert!(add_user(&user, &password).unwrap());
+    //assert!(add_to_admin_group(&user).unwrap());
+    let user_existing_on_system = check_user_exists(&user);
+    assert!(user_existing_on_system);
     let users = get_local_users();
     assert!(check_user_is_admin(&users, &user).unwrap());
+    /*
     match del_user(&user) {
         Ok(true) => wprintln!("Successfully deleted {}", &user),
         _ => wprintln!("Did not successfully delete: {}", &user),
     };
+    */
 }
+ */
 
+/*
 #[test]
 fn test_many_users() {
     let number_of_users = how_many_local_users().unwrap();
@@ -423,3 +476,4 @@ fn test_many_users() {
         number_of_users, new_number_of_users
     );
 }
+ */

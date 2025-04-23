@@ -1,8 +1,9 @@
 /target
 **/target
-bazel-bin
-bazel-out
-bazel-statham
-bazel-testlogs
-cargo/vendor
-.clwb
+/bazel-*
+/bazel-bin
+/bazel-out
+/bazel-statham-password-transporter
+/bazel-testlogs
+/cargo/vendor
+/.clwb

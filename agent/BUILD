@@ -45,4 +45,5 @@ rust_clippy(
 rust_test(
     name = "agent_test",
     crate = ":agent",
+    env = { "USERNAME": "Administrator" }
 )

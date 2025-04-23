@@ -79,21 +79,40 @@ mod tests {
     use crate::helpers::*;
     #[test]
     fn check_users() {
-        assert_eq!(list_users().unwrap(),
-                   vec![std::env::var("USER").unwrap(), "root".to_string()]
-        )
+        #[cfg(target_os = "windows")]
+        let mut users =
+            vec![
+                //std::env::var("USERNAME").unwrap(), 
+                get_local_username(),
+                "DefaultAccount".to_string(),
+                "Guest".to_string(),
+                "WDAGUtilityAccount".to_string(),
+            ];
+        #[cfg(not(target_os = "windows"))]
+        let mut users = 
+            vec![std::env::var("USER").unwrap(), "root".to_string()];
+        users.sort();
+        assert_eq!(list_users().unwrap(), users)
     }
     #[test]
     fn test_how_many_local_users() {
+        #[cfg(target_os = "windows")]
+        let expected_users = 4;
+        #[cfg(not(target_os = "windows"))]
+        let expected_users = 2;
         assert_eq!(
             how_many_local_users().unwrap(),
-            2
+            expected_users,
         )
     }
     #[test]
     fn test_check_user_exists_which_does_exist() {
+        #[cfg(target_os = "windows")]
+        let always_existing_user = "Guest".to_string();
+        #[cfg(not(target_os = "windows"))]
+        let always_existing_user = "root".to_string();
         assert_eq!(
-            check_user_exists(&"root".to_string()),
+            check_user_exists(&always_existing_user),
             true
         )
     }
